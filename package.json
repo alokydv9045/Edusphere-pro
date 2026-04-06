@@ -1,0 +1,14 @@
+{
+  "name": "edusphere-erp-root",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "echo 'Root build complete'",
+    "build:server": "cd server && npm install && npm run build",
+    "build:client": "cd client && npm install && npm run build",
+    "start": "echo 'Please set the Root Directory in Railway settings'"
+  }
+}
