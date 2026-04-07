@@ -6,9 +6,10 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "build": "echo 'Root build complete'",
+    "build": "npm run build:server && npm run build:client",
     "build:server": "cd server && npm install && npm run build",
     "build:client": "cd client && npm install && npm run build",
-    "start": "echo 'Please set the Root Directory in Railway settings'"
+    "start": "echo 'To start development, run: npm run dev in server and client directories. For deployment, use the render.yaml blueprint.'",
+    "deploy": "echo 'Please use the Render Dashboard to deploy using the render.yaml file.'"
   }
 }
