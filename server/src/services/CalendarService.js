@@ -117,6 +117,26 @@ class CalendarService {
             data: sanitizedData
         });
     }
+
+    /**
+     * Get a Set of ALL non-working days in a range (Optimization for reports)
+     * Returns: Set { '2026-04-01', '2026-04-02', ... }
+     */
+    async getNonWorkingDaysInRange(startDate, endDate) {
+        const events = await prisma.schoolCalendar.findMany({
+            where: {
+                date: {
+                    gte: getStartOfDay(startDate),
+                    lte: getStartOfDay(endDate)
+                },
+                isWorkingDay: false
+            },
+            select: { date: true }
+        });
+
+        // Convert to a Set of strings for efficient O(1) lookup
+        return new Set(events.map(e => e.date.toISOString().split('T')[0]));
+    }
 }
 
 module.exports = new CalendarService();

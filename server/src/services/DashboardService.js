@@ -256,6 +256,17 @@ class DashboardService {
 
         const [pendingFeeCount, upcomingExamCount, overdueBooks, markedSections, totalSectionsCount] = opResults.map(r => r.status === 'fulfilled' ? r.value : 0);
 
+        // Funnel Data (Registration by Class)
+        const classDistRaw = await DashboardRepository.getClassDistribution();
+        const classIds = classDistRaw.map(d => d.currentClassId);
+        const classes = await DashboardRepository.getClassesByIds(classIds);
+        const classMap = new Map(classes.map(c => [c.id, c.name]));
+
+        const classDistribution = classDistRaw.map(d => ({
+            name: classMap.get(d.currentClassId) || 'Unknown',
+            count: d._count.id
+        }));
+
         // Calculations
         const attendanceToday = totalAttToday > 0 ? parseFloat(((presentAttToday / totalAttToday) * 100).toFixed(1)) : 0;
 
@@ -286,6 +297,7 @@ class DashboardService {
             upcomingExamCount: upcomingExamCount || 0,
             overdueBooks: overdueBooks || 0,
             transport: await this._getTransportOverallStats(),
+            data: classDistribution, // For RealtimeChart (Admissions funnel)
             role: 'ADMIN'
         };
     }
@@ -620,7 +632,7 @@ class DashboardService {
 
             months.push({
                 month: d.toLocaleString('default', { month: 'short' }),
-                collected: income,
+                actual: income,
                 pending: pending,
                 target
             });

@@ -32,13 +32,15 @@ apiClient.interceptors.response.use(
     const config = error.config;
     const status = error.response?.status;
     
-    // Global 401 Unauthorized Handling (Session Expired)
-    if (status === 401 && typeof window !== 'undefined') {
+    // Global Auth Handling (Session Expired or Account Deactivated)
+    if ((status === 401 || status === 403) && typeof window !== 'undefined') {
       const isLoginRequest = config?.url?.includes('/auth/login') || config?.url?.includes('/login');
       if (window.location.pathname !== '/login' && !isLoginRequest) {
         // Clear local cache
         localStorage.removeItem('user');
-        window.location.href = '/login?reason=session_expired';
+        
+        const reason = status === 401 ? 'session_expired' : 'account_deactivated';
+        window.location.href = `/login?reason=${reason}`;
       }
       return Promise.reject(error);
     }

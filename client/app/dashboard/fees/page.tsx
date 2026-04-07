@@ -1052,20 +1052,20 @@ export default function FeesPage() {
               description="Monthly fee collection vs target"
               endpoint="/dashboard/finance-stats"
               socketEvent="FINANCE_UPDATE"
-              type="area"
-              dataKey="actual"
+              type="bar"
+              dataKey={["actual", "target"]}
               xAxisKey="month"
-              color="#22c55e"
+              colors={["#22c55e", "#94a3b8"]}
             />
             <RealtimeChart
               title="Collection Breakdown"
               description="Payment method distribution"
               endpoint="/dashboard/finance-stats"
               socketEvent="FINANCE_UPDATE"
-              type="pie"
+              type="radar"
               dataKey="value"
               xAxisKey="name"
-              colors={["#22c55e", "#3b82f6", "#f59e0b", "#ef4444"]}
+              color="#3b82f6"
             />
           </div>
 

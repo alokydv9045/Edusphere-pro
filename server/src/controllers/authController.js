@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const AUTH_CONFIG = require('../config/auth');
 const prisma = require('../config/database');
 const asyncHandler = require('../utils/asyncHandler');
 const { validateAndNormalizeRoles } = require('../utils/userUtils');
@@ -13,20 +14,12 @@ const generateToken = (user) => {
       roles: (user.roles && user.roles.length > 0) ? user.roles : [user.role],
     },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    { expiresIn: AUTH_CONFIG.JWT_EXPIRES_IN }
   );
 };
 
 const setAuthCookie = (res, token) => {
-  const isProduction = process.env.NODE_ENV === 'production';
-  const cookieOptions = {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? 'none' : 'lax', // 'none' required for cross-subdomain cookies on Render
-    maxAge: 7 * 24 * 60 * 60 * 1000, 
-    path: '/',
-  };
-  res.cookie('auth_token', token, cookieOptions);
+  res.cookie(AUTH_CONFIG.COOKIE_NAME, token, AUTH_CONFIG.getCookieOptions());
 };
 
 const register = asyncHandler(async (req, res) => {
@@ -192,13 +185,7 @@ const login = asyncHandler(async (req, res) => {
 });
 
 const logout = asyncHandler(async (req, res) => {
-  const isProduction = process.env.NODE_ENV === 'production';
-  res.clearCookie('auth_token', {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? 'none' : 'lax',
-    path: '/',
-  });
+  res.clearCookie(AUTH_CONFIG.COOKIE_NAME, AUTH_CONFIG.getClearCookieOptions());
   res.status(200).json({ success: true, message: 'Logged out successfully' });
 });
 
