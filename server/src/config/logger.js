@@ -43,8 +43,8 @@ const logger = winston.createLogger({
     ],
 });
 
-// 3. If we're not in production then log to the `console` with a simpler format
-if (process.env.NODE_ENV !== 'production') {
+// 3. Log to console for development or if running on Render/Cloud (STDOUT logging)
+if (process.env.NODE_ENV !== 'production' || process.env.RENDER) {
     logger.add(
         new winston.transports.Console({
             format: winston.format.combine(

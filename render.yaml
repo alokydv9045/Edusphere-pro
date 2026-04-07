@@ -4,12 +4,14 @@ services:
     name: edusphere-api
     env: node
     plan: free # or starter
-    buildCommand: npm install && npm run build && npx prisma migrate deploy
-    startCommand: npm start
+    buildCommand: npm install && npm run build
+    startCommand: npx prisma migrate deploy && npm start
     rootDir: server
     envVars:
       - key: PORT
         value: 5001
+      - key: NODE_VERSION
+        value: 20
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
@@ -26,15 +28,12 @@ services:
       - key: COOKIE_SECRET
         generateValue: true
       - key: ALLOWED_ORIGINS
-        fromService:
-          type: web
-          name: edusphere-client
-          property: url
+        value: "*" # Set to "*" or your specific client URL after first deploy to break circular dependency
       # School Identity
       - key: SCHOOL_ID
-        sync: false
+        value: edusphere-prod
       - key: SCHOOL_NAME
-        sync: false
+        value: EduSphere ERP
       # Cloudinary
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
@@ -52,6 +51,10 @@ services:
     startCommand: npm start
     rootDir: client
     envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=450"
       - key: NEXT_PUBLIC_API_URL
         fromService:
           type: web
