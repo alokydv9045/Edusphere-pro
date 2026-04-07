@@ -22,9 +22,10 @@ Render will show you a list of services to be created based on the blueprint:
 
 Click **Apply** to start the build process.
 
-### 3. PostgreSQL & Prisma Migrations
-The backend service is configured to run `npx prisma migrate deploy` automatically before starting. 
-- Ensure your `DATABASE_URL` and `DIRECT_URL` (Supabase) are correctly set in the Render Environment Variables if you want to override the ones in `render.yaml`.
+### 3. PostgreSQL & Prisma Sync (Automated)
+The backend is now configured to run `npx prisma db push` automatically.
+- This will sync your schema directly to Supabase without failing on existing tables.
+- **Note**: This is the fastest way to get your app live when your database already has data.
 
 ### 4. Post-Deployment Optimization (CRITICAL)
 Once the deployment finishes, you will get two URLs (e.g., `https://edusphere-api.onrender.com` and `https://edusphere-client.onrender.com`).
