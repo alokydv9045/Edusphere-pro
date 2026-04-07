@@ -50,7 +50,7 @@ services:
     name: edusphere-client
     env: node
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && npm run build && cp -r public .next/standalone/public && cp -r .next/static .next/standalone/.next/static
     startCommand: node .next/standalone/server.js
     rootDir: client
     envVars:
@@ -58,6 +58,8 @@ services:
         value: 20
       - key: NODE_OPTIONS
         value: "--max-old-space-size=450"
+      - key: HOSTNAME
+        value: "0.0.0.0"
       - key: NEXT_PUBLIC_API_URL
         value: "https://edusphere-api.onrender.com/api" # UPDATE THIS after your first deploy with your actual API URL
       - key: PORT
