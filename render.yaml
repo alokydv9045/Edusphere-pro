@@ -27,7 +27,7 @@ services:
         value: "edusphere-secure-cookie-secret-99af827c1"
       # CORS: Set to "*" initially, update to your frontend .onrender.com URL later
       - key: ALLOWED_ORIGINS
-        value: "*"
+        value: "https://edusphere-client-qgie.onrender.com"
       # School Identity
       - key: SCHOOL_ID
         value: edusphere-prod
