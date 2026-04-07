@@ -150,9 +150,11 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // Start server
-server.listen(PORT, () => {
-  logger.info(`🚀 School ERP Server running on http://localhost:${PORT}`);
+const HOST = '0.0.0.0';
+server.listen(PORT, HOST, () => {
+  console.log(`🚀 School ERP Server starting on ${HOST}:${PORT}`);
+  logger.info(`🚀 School ERP Server running on http://${HOST}:${PORT}`);
   logger.info(`🏫 School: ${process.env.SCHOOL_NAME} (${process.env.SCHOOL_ID})`);
   logger.info(`📊 Environment: ${process.env.NODE_ENV}`);
-  logger.info(`🏥 Health check: http://localhost:${PORT}/health`);
+  logger.info(`🏥 Health check: http://${HOST}:${PORT}/health`);
 });

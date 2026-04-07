@@ -1,8 +1,21 @@
 # 🚀 EduSphere ERP: Render Deployment Guide
 
-This guide provides both **Blueprint** and **Manual** setup instructions for your EduSphere ERP project on Render.
+> [!CAUTION]
+> ### ⚠️ CRITICAL: Security & Port Cleanup
+> You have committed your `.env` files to GitHub. This is the **#1 cause of deployment failure** and a major security risk.
+> 
+> **Immediate Action Required:**
+> 1. Run these commands locally to remove them from your GitHub repository (this won't delete the files from your computer, only from Git):
+>    ```bash
+>    git rm --cached server/.env
+>    git rm --cached client/.env
+>    git commit -m "security: remove environment files from Git tracking"
+>    git push origin main
+>    ```
+> 2. Ensure your **Render Dashboard Setup** has `PORT` set to `5001`. If it's missing, Render defaults to `10000`, causing the "No open ports detected" error because your app is only listening on `5001`.
 
 ## 📦 Project Configuration Details
+... (rest of guide)
 - **Repository**: `alokydv9045/Edusphere-pro`
 - **Branch**: `main`
 - **Region**: `Oregon (US West)`
