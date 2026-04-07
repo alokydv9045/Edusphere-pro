@@ -59,10 +59,6 @@ services:
       - key: NODE_OPTIONS
         value: "--max-old-space-size=450"
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: edusphere-api
-          property: url
-          suffix: /api
+        value: "https://edusphere-api.onrender.com/api" # UPDATE THIS after your first deploy with your actual API URL
       - key: PORT
         value: 3000

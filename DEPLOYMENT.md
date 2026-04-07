@@ -29,8 +29,13 @@ The backend service is configured to run `npx prisma migrate deploy` automatical
 ### 4. Post-Deployment Optimization (CRITICAL)
 Once the deployment finishes, you will get two URLs (e.g., `https://edusphere-api.onrender.com` and `https://edusphere-client.onrender.com`).
 
-1. Go to the **edusphere-api** service settings in Render.
-2. In **Environment Variables**, update `ALLOWED_ORIGINS` to include your frontend URL (replace `*` with `https://your-app-client.onrender.com`).
+1. Go to the **edusphere-client** (Frontend) service settings in Render.
+2. In **Environment Variables**, check the `NEXT_PUBLIC_API_URL`.
+3. Ensure it matches your actual **Backend** URL (e.g., `https://edusphere-api.onrender.com/api`).
+4. If they don't match, update it and Render will rebuild the frontend with the correct link.
+
+1. Go to the **edusphere-api** (Backend) service settings in Render.
+2. In **Environment Variables**, update `ALLOWED_ORIGINS` to include your frontend URL (replace `*` with `https://edusphere-client.onrender.com`).
 3. Save changes. The backend will restart.
 
 ## Maintenance
