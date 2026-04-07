@@ -61,6 +61,6 @@ services:
       - key: HOSTNAME
         value: "0.0.0.0"
       - key: NEXT_PUBLIC_API_URL
-        value: "https://edusphere-api.onrender.com/api" # UPDATE THIS after your first deploy with your actual API URL
+        value: "https://edusphere-api-85ho.onrender.com/api"
       - key: PORT
         value: 3000
