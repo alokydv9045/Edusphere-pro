@@ -3,52 +3,55 @@ services:
   - type: web
     name: edusphere-api
     env: node
-    plan: free # or starter
+    plan: free
     buildCommand: npm install && npm run build
     startCommand: npx prisma migrate deploy && npm start
     rootDir: server
+    healthCheckPath: /health
     envVars:
-      - key: PORT
-        value: 5001
       - key: NODE_VERSION
         value: 20
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 5001
+      # Supabase Credentials (Keep existing from your provided list)
       - key: DATABASE_URL
-        fromDatabase:
-          name: edusphere-db
-          property: connectionString
+        value: "postgresql://postgres.ypcdplcbjntaxisujtwj:Mysupabase9045@aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres?pgbouncer=true"
       - key: DIRECT_URL
-        fromDatabase:
-          name: edusphere-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: edusphere-cache
-          property: connectionString
+        value: "postgresql://postgres.ypcdplcbjntaxisujtwj:Mysupabase9045@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres"
+      # Security Secrets
       - key: JWT_SECRET
-        generateValue: true
+        value: "edusphere-secure-jwt-secret-99af827c1-3a0e-4f1b-8d2c-7b4a9e5d1c3f"
       - key: COOKIE_SECRET
-        generateValue: true
+        value: "edusphere-secure-cookie-secret-99af827c1"
+      # CORS: Set to "*" initially, update to your frontend .onrender.com URL later
       - key: ALLOWED_ORIGINS
-        value: "*" # Set to "*" or your specific client URL after first deploy
+        value: "*"
       # School Identity
       - key: SCHOOL_ID
         value: edusphere-prod
       - key: SCHOOL_NAME
         value: EduSphere ERP
-      # Performance Tuning
-      - key: WEB_CONCURRENCY
-        value: 1
+      # Razorpay & Cloudinary (Placeholders - populate from your list)
+      - key: CLOUDINARY_CLOUD_NAME
+        value: dls1wm7vn
+      - key: CLOUDINARY_API_KEY
+        value: 836367281817127
+      - key: CLOUDINARY_API_SECRET
+        value: 3AgyOA9Dcvcefk8eF7C0pJ5Wm90
+      - key: RAZORPAY_KEY_ID
+        value: rzp_test_SSN8q9JDwXAvdt
+      - key: RAZORPAY_KEY_SECRET
+        value: WKueOf2DOH8IeZ9AmoG2N5S5
 
   # ── EduSphere Frontend Client ──────────────────────────────────────────────
   - type: web
     name: edusphere-client
     env: node
-    plan: free # or starter
+    plan: free
     buildCommand: npm install && npm run build
-    startCommand: npm start
+    startCommand: node .next/standalone/server.js
     rootDir: client
     envVars:
       - key: NODE_VERSION
@@ -63,13 +66,3 @@ services:
           suffix: /api
       - key: PORT
         value: 3000
-
-# ── Databases & Infrastructure ────────────────────────────────────────────────
-databases:
-  - name: edusphere-db
-    plan: free # or standard
-
-redis:
-  - name: edusphere-cache
-    plan: free # or standard
-    ipAllowList: [] # Allow internal access only
