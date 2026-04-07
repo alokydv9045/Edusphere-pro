@@ -1,3 +1,4 @@
+console.log('🎬 Backend Process Initializing...');
 require('dotenv').config();
 
 // ── Validate critical environment variables ──────────────────────────────
