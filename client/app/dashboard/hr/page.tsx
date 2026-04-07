@@ -614,7 +614,7 @@ export default function HRManagementPage() {
                             socketEvent="HR_UPDATE"
                             type="area"
                             dataKey="percentage"
-                            xAxisKey="day"
+                            xAxisKey="date"
                             color="#8b5cf6"
                         />
                         <RealtimeChart
@@ -622,7 +622,7 @@ export default function HRManagementPage() {
                             description="Breakdown of recent leave requests"
                             endpoint="/dashboard/hr-stats"
                             socketEvent="LEAVE_UPDATE"
-                            type="pie"
+                            type="bar"
                             dataKey="value"
                             xAxisKey="name"
                             colors={["#8b5cf6", "#ec4899", "#f59e0b", "#10b981"]}
@@ -634,10 +634,11 @@ export default function HRManagementPage() {
                             description="Teacher vs non-teaching staff distribution"
                             endpoint="/dashboard/hr-stats"
                             socketEvent="HR_UPDATE"
-                            type="bar"
-                            dataKey="count"
-                            xAxisKey="role"
-                            color="#3b82f6"
+                            type="pie"
+                            dataKey="value"
+                            xAxisKey="name"
+                            dataProperty="roleDistribution"
+                            colors={["#3b82f6", "#10b981"]}
                         />
                     </div>
                 </TabsContent>

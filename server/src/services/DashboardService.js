@@ -580,6 +580,8 @@ class DashboardService {
 
         const allPresent = await DashboardRepository.getEmployeeAttendanceTrend(startOfTrend, endOfTrend);
 
+        const totalEmployees = totalTeachers + totalStaff;
+
         for (let i = 6; i >= 0; i--) {
             const d = new Date(today);
             d.setDate(d.getDate() - i);
@@ -591,12 +593,17 @@ class DashboardService {
 
             trend.push({
                 date: d.toLocaleDateString('en-US', { weekday: 'short' }),
-                present
+                present,
+                percentage: totalEmployees > 0 ? parseFloat(((present / totalEmployees) * 100).toFixed(1)) : 0
             });
         }
 
         return {
-            summary: { totalTeachers, totalStaff, totalEmployees: totalTeachers + totalStaff },
+            summary: { totalTeachers, totalStaff, totalEmployees },
+            roleDistribution: [
+                { name: 'Teachers', value: totalTeachers },
+                { name: 'Non-Teaching Staff', value: totalStaff }
+            ],
             leaveDistribution: leaves.map(l => ({ name: l.leaveType, value: l._count.id })),
             attendanceTrend: trend
         };
