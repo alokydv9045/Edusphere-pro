@@ -20,7 +20,9 @@ const authMiddleware = async (req, res, next) => {
     }
 
     if (!token) {
-      console.warn(`[AUTH_DEBUG]: No token found in cookies (${JSON.stringify(Object.keys(req.cookies || {}))}) or Authorization header.`);
+      const origin = req.get('origin') || 'Unknown Origin';
+      console.warn(`[AUTH_DIAGNOSTIC]: Token missing for request from ${origin}. Cookies present: ${Object.keys(req.cookies || {}).join(', ') || 'NONE'}`);
+      console.warn(`[AUTH_DIAGNOSTIC]: Environment: ${process.env.NODE_ENV}, Protocol: ${req.protocol}, X-Forwarded-Proto: ${req.get('x-forwarded-proto')}`);
       return res.status(401).json({ error: 'Auth token required' });
     }
 

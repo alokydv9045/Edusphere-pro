@@ -1,42 +1,37 @@
 /**
  * Central Authentication Configuration
- * Deeply built to handle Production (Render) and Development environments.
+ * Hardened for Production (Render) Cross-Site Cookie Compatibility.
  */
 
 const SESSION_DAYS = 7;
 const SESSION_MS = SESSION_DAYS * 24 * 60 * 60 * 1000;
 
 const AUTH_CONFIG = {
-  // Duration in milliseconds (for Cookies)
   COOKIE_MAX_AGE: SESSION_MS,
-  
-  // Duration as string (for JWT)
   JWT_EXPIRES_IN: `${SESSION_DAYS}d`,
-  
-  // Cookie identifier
   COOKIE_NAME: 'auth_token',
 
   /**
    * Generates production-ready cookie options.
-   * Ensures 'Secure' and 'SameSite: None' is applied on Render.
+   * CRITICAL: Render frontend and backend are on different subdomains.
+   * Modern browsers REJECT cross-site cookies unless SameSite=None and Secure=True.
    */
   getCookieOptions: () => {
-    const isProduction = process.env.NODE_ENV === 'production';
+    // Detect if on Render or standard Production
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
     
     return {
       httpOnly: true,
-      secure: isProduction, // HTTPS required in prod
-      sameSite: isProduction ? 'none' : 'lax', // 'none' for cross-domain on Render
+      secure: isProduction, // MUST be true for sameSite: 'none'
+      sameSite: isProduction ? 'none' : 'lax', // 'none' enables cross-site cookies on Render
       maxAge: SESSION_MS,
       path: '/',
+      // partitioned: true, // Only enable if SameSite: None still fails in Chrome
     };
   },
 
-  /**
-   * Cookie options specifically for clearing/logout.
-   */
   getClearCookieOptions: () => {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
     
     return {
       httpOnly: true,
