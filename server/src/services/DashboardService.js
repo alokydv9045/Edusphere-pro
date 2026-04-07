@@ -311,23 +311,7 @@ class DashboardService {
     }
 
     async getAttendanceTrendData(startDate, classId, studentId) {
-        const where = {
-            date: { gte: startDate },
-            attendeeType: 'STUDENT'
-        };
-
-        if (studentId) {
-            where.studentId = studentId;
-        } else if (classId) {
-            where.student = { currentClassId: classId };
-        }
-
-        return prisma.attendanceRecord.groupBy({
-            by: ['date', 'status'],
-            where,
-            _count: { id: true },
-            orderBy: { date: 'asc' }
-        });
+        return DashboardRepository.getAttendanceTrendData(startDate, classId, studentId);
     }
 
     async countTransportAllocations() {
@@ -538,12 +522,21 @@ class DashboardService {
 
         const months = [];
         const today = new Date();
+        const startOfTrend = new Date(today.getFullYear(), today.getMonth() - 5, 1);
+        const endOfTrend = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+        const allIssues = await DashboardRepository.getLibraryIssueTrend(startOfTrend, endOfTrend);
+
         for (let i = 5; i >= 0; i--) {
             const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-            const start = new Date(d.getFullYear(), d.getMonth(), 1);
-            const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+            const month = d.getMonth();
+            const year = d.getFullYear();
 
-            const count = await DashboardRepository.countLibraryIssues(null, { start, end });
+            const count = allIssues.filter(iss => {
+                const id = new Date(iss.issueDate);
+                return id.getMonth() === month && id.getFullYear() === year;
+            }).length;
+
             months.push({
                 month: d.toLocaleString('default', { month: 'short' }),
                 count
@@ -568,17 +561,21 @@ class DashboardService {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
+        const startOfTrend = new Date(today);
+        startOfTrend.setDate(today.getDate() - 6);
+        const endOfTrend = new Date(today);
+        endOfTrend.setDate(today.getDate() + 1);
+
+        const allPresent = await DashboardRepository.getEmployeeAttendanceTrend(startOfTrend, endOfTrend);
+
         for (let i = 6; i >= 0; i--) {
             const d = new Date(today);
             d.setDate(d.getDate() - i);
-            const nextD = new Date(d);
-            nextD.setDate(nextD.getDate() + 1);
+            const dateStr = d.toISOString().split('T')[0];
 
-            const present = await DashboardRepository.getAttendanceCount({
-                date: { gte: d, lt: nextD },
-                attendeeType: { in: ['TEACHER', 'STAFF'] },
-                status: 'PRESENT'
-            });
+            const present = allPresent.filter(att => {
+                return att.date.toISOString().split('T')[0] === dateStr;
+            }).length;
 
             trend.push({
                 date: d.toLocaleDateString('en-US', { weekday: 'short' }),
@@ -596,17 +593,29 @@ class DashboardService {
     async getFinanceStats() {
         const today = new Date();
         const months = [];
+        const startOfTrend = new Date(today.getFullYear(), today.getMonth() - 5, 1);
+        const endOfTrend = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+        const allPayments = await DashboardRepository.getFeePaymentTrend(startOfTrend, endOfTrend);
 
         for (let i = 5; i >= 0; i--) {
             const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-            const start = new Date(d.getFullYear(), d.getMonth(), 1);
-            const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+            const month = d.getMonth();
+            const year = d.getFullYear();
 
-            const incomeRes = await DashboardRepository.getFeeSum('COMPLETED', start, end);
-            const pendingRes = await DashboardRepository.getFeeSum('PENDING', start, end);
+            const monthPayments = allPayments.filter(p => {
+                const pd = new Date(p.paymentDate);
+                return pd.getMonth() === month && pd.getFullYear() === year;
+            });
 
-            const income = parseFloat(incomeRes._sum.amount || 0);
-            const pending = parseFloat(pendingRes._sum.amount || 0);
+            const income = monthPayments
+                .filter(p => p.status === 'COMPLETED')
+                .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+
+            const pending = monthPayments
+                .filter(p => p.status === 'PENDING')
+                .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+
             const target = (income + pending) * 0.9; // Target 90% collection
 
             months.push({

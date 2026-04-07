@@ -20,10 +20,17 @@ const authMiddleware = async (req, res, next) => {
     }
 
     if (!token) {
+      console.warn(`[AUTH_DEBUG]: No token found in cookies (${JSON.stringify(Object.keys(req.cookies || {}))}) or Authorization header.`);
       return res.status(401).json({ error: 'Auth token required' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      console.error(`[AUTH_DEBUG]: Token verification failed: ${err.message}`);
+      return res.status(401).json({ error: 'Invalid token' });
+    }
 
     // --- Critical: Status Check ---
     const user = await prisma.user.findUnique({

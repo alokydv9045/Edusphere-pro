@@ -439,19 +439,29 @@ class FeeService {
             ? (totalCollected / (totalCollected + totalPending)) * 100
             : 0;
 
-        const trendData = [];
         const now = new Date();
+        const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+        const allPayments = await feeRepo.getMonthlyCollectionTrend(sixMonthsAgo, endOfMonth);
+
+        const trendData = [];
         for (let i = 5; i >= 0; i--) {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-            const start = new Date(d.getFullYear(), d.getMonth(), 1);
-            const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-
             const monthName = d.toLocaleString('default', { month: 'short' });
-            const monthCollection = await feeRepo.getMonthlyCollection(start, end);
+            const month = d.getMonth();
+            const year = d.getFullYear();
+
+            const monthTotal = allPayments
+                .filter(p => {
+                    const pd = new Date(p.paymentDate);
+                    return pd.getMonth() === month && pd.getFullYear() === year;
+                })
+                .reduce((sum, p) => sum + p.amount, 0);
 
             trendData.push({
                 month: monthName,
-                collected: monthCollection?._sum?.amount || 0,
+                collected: monthTotal
             });
         }
 

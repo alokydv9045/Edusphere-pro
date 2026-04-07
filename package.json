@@ -9,7 +9,9 @@
     "build": "npm run build:server && npm run build:client",
     "build:server": "cd server && npm install && npm run build",
     "build:client": "cd client && npm install && npm run build",
-    "start": "echo 'To start development, run: npm run dev in server and client directories. For deployment, use the render.yaml blueprint.'",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "start": "echo 'To start development, run: npm run dev:server and npm run dev:client in separate terminals.'",
     "deploy": "echo 'Please use the Render Dashboard to deploy using the render.yaml file.'"
   }
 }

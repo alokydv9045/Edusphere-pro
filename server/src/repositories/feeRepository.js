@@ -90,41 +90,56 @@ class FeeRepository {
      * Sync student fee ledger (Create if not exists, update payable if exists and not paid)
      */
     async syncStudentFeeLedgers(studentIds, structure) {
+        // Fetch all existing ledgers for these students and this structure in one go
+        const existingLedgers = await prisma.studentFeeLedger.findMany({
+            where: {
+                studentId: { in: studentIds },
+                feeStructureId: structure.id
+            },
+            select: { studentId: true, id: true, totalPaid: true, totalDiscount: true }
+        });
+
+        const existingMap = new Map(existingLedgers.map(l => [l.studentId, l]));
+        const studentsToCreate = studentIds.filter(id => !existingMap.has(id));
+        
+        // Students who need updates (payable amount changed but no payments yet)
+        const studentsToUpdate = [];
+        for (const [studentId, ledger] of existingMap.entries()) {
+            if (ledger.totalPaid === 0 && ledger.totalDiscount === 0) {
+                studentsToUpdate.push(ledger.id);
+            }
+        }
+
         return prisma.$transaction(async (tx) => {
             const results = [];
-            for (const studentId of studentIds) {
-                // Find existing ledger for this student and structure
-                const existing = await tx.studentFeeLedger.findFirst({
-                    where: { studentId, feeStructureId: structure.id }
+            
+            // Batch create new ledgers
+            if (studentsToCreate.length > 0) {
+                await tx.studentFeeLedger.createMany({
+                    data: studentsToCreate.map(studentId => ({
+                        studentId,
+                        feeStructureId: structure.id,
+                        academicYearId: structure.academicYearId || null,
+                        totalPayable: structure.totalAmount,
+                        totalPaid: 0,
+                        totalPending: structure.totalAmount,
+                        totalDiscount: 0,
+                        status: 'PENDING'
+                    })),
+                    skipDuplicates: true
                 });
-
-                if (!existing) {
-                    // Create new ledger
-                    results.push(await tx.studentFeeLedger.create({
-                        data: {
-                            studentId,
-                            feeStructureId: structure.id,
-                            academicYearId: structure.academicYearId || null,
-                            totalPayable: structure.totalAmount,
-                            totalPaid: 0,
-                            totalPending: structure.totalAmount,
-                            totalDiscount: 0,
-                            status: 'PENDING'
-                        }
-                    }));
-                } else if (existing.totalPaid === 0 && existing.totalDiscount === 0) {
-                    // Update existing ledger only if no payments/discounts processed yet
-                    // to avoid messing up active financial records
-                    results.push(await tx.studentFeeLedger.update({
-                        where: { id: existing.id },
-                        data: {
-                            totalPayable: structure.totalAmount,
-                            totalPending: structure.totalAmount,
-                        }
-                    }));
-                }
             }
-            return results;
+
+            // Batch update existing ledgers (who haven't paid yet)
+            if (studentsToUpdate.length > 0) {
+                await tx.studentFeeLedger.updateMany({
+                    where: { id: { in: studentsToUpdate } },
+                    data: {
+                        totalPayable: structure.totalAmount,
+                        totalPending: structure.totalAmount,
+                    }
+                });
+            }
         });
     }
 
@@ -513,15 +528,18 @@ class FeeRepository {
     }
 
     /**
-     * Get monthly collection trend
+     * Get monthly collection trend for a date range in one query
      */
-    async getMonthlyCollection(start, end) {
-        return prisma.feePayment.aggregate({
+    async getMonthlyCollectionTrend(start, end) {
+        return prisma.feePayment.findMany({
             where: {
                 status: 'COMPLETED',
                 paymentDate: { gte: start, lte: end },
             },
-            _sum: { amount: true },
+            select: {
+                amount: true,
+                paymentDate: true
+            }
         });
     }
 }

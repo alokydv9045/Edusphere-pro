@@ -115,6 +115,15 @@ class DashboardRepository {
         return result || { _sum: { amount: 0 } };
     }
 
+    async getFeePaymentTrend(start, end) {
+        return prisma.feePayment.findMany({
+            where: {
+                paymentDate: { gte: start, lte: end }
+            },
+            select: { amount: true, paymentDate: true, status: true }
+        });
+    }
+
     async countFeeTransactions(status, fromDate, toDate) {
         const where = { status };
         if (fromDate || toDate) {
@@ -333,6 +342,17 @@ class DashboardRepository {
         return prisma.attendanceRecord.count({ where });
     }
 
+    async getEmployeeAttendanceTrend(start, end) {
+        return prisma.attendanceRecord.findMany({
+            where: {
+                date: { gte: start, lte: end },
+                attendeeType: { in: ['TEACHER', 'STAFF'] },
+                status: 'PRESENT'
+            },
+            select: { date: true }
+        });
+    }
+
     async getLatestCompletedExam(classId) {
         return prisma.exam.findFirst({
             where: { classId, status: 'COMPLETED' },
@@ -376,6 +396,13 @@ class DashboardRepository {
             where.issueDate = { gte: dateRange.start, lte: dateRange.end };
         }
         return prisma.libraryIssue.count({ where });
+    }
+
+    async getLibraryIssueTrend(start, end) {
+        return prisma.libraryIssue.findMany({
+            where: { issueDate: { gte: start, lte: end } },
+            select: { issueDate: true }
+        });
     }
 
     // --- HR ---
@@ -478,6 +505,26 @@ class DashboardRepository {
     async countActiveTrips() {
         return prisma.transportTrip.count({
             where: { status: 'IN_PROGRESS' }
+        });
+    }
+
+    async getAttendanceTrendData(startDate, classId, studentId) {
+        const where = {
+            date: { gte: startDate },
+            attendeeType: 'STUDENT'
+        };
+
+        if (studentId) {
+            where.studentId = studentId;
+        } else if (classId) {
+            where.student = { currentClassId: classId };
+        }
+
+        return prisma.attendanceRecord.groupBy({
+            by: ['date', 'status'],
+            where,
+            _count: { id: true },
+            orderBy: { date: 'asc' }
         });
     }
 

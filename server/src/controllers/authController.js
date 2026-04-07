@@ -21,7 +21,7 @@ const setAuthCookie = (res, token) => {
   const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days (matching JWT_EXPIRES_IN fallback)
     path: '/',
   };
@@ -194,7 +194,7 @@ const logout = asyncHandler(async (req, res) => {
   res.clearCookie('auth_token', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',
     path: '/',
   });
   res.status(200).json({ success: true, message: 'Logged out successfully' });

@@ -201,7 +201,7 @@ export function AccountantDashboard() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-orange-700">{formatINR(summary.pendingAmount)}</div>
+                        <div className="text-2xl font-bold text-orange-700">{formatINR(Math.abs(summary.pendingAmount))}</div>
                         <p className="mt-1 text-xs text-muted-foreground">Across all students</p>
                     </CardContent>
                 </Card>
@@ -384,7 +384,7 @@ export function AccountantDashboard() {
                                         <p className="text-xs text-muted-foreground">{d.class}</p>
                                     </div>
                                     <div className="text-right shrink-0">
-                                        <p className="text-sm font-bold text-orange-600">{formatFull(d.pendingAmount)}</p>
+                                        <p className="text-sm font-bold text-orange-600">{formatFull(Math.abs(d.pendingAmount))}</p>
                                         <p className="text-xs text-muted-foreground">pending</p>
                                     </div>
                                     <Link href="/dashboard/fees/collect">

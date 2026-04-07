@@ -40,64 +40,48 @@ const MODE_COLORS: Record<string, string> = {
   BANK_TRANSFER: 'bg-orange-100 text-orange-700',
 };
 
+import { useDashboardData } from '@/hooks/useDashboardData';
+import { studentAPI } from '@/lib/api';
+
 // ─── Main Page ──────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { user } = useAuth();
   const { canCollectFees, canManageFees, canViewStudents } = usePermissions();
 
   const role = user?.role || '';
-  const { socket } = useSocket();
   const firstName = user?.firstName || 'User';
   const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-  // ── Shared state ──────────────────────────────────────────────────────────
-  const [stats, setStats] = useState<DashboardStats & {
-    activeStudents?: number; totalClasses?: number; recentAdmissions?: number;
-    upcomingExamCount?: number; pendingFeeCount?: number; overdueBooks?: number;
-    attendancePercentage?: number; pendingFees?: number; booksDue?: number;
-    pendingAttendance?: number;
-    nextExam?: { name: string; date: string } | null;
-  }>({
+  // ── SWR Data Fetching ──────────────────────────────────────────────────────
+  const {
+    stats: rawStats,
+    activities: recentActivities,
+    exams: upcomingExams,
+    feeSummary: feeCollectionSummary,
+    accountantData,
+    isLoading: isDataLoading,
+    refresh
+  } = useDashboardData(role);
+
+  const [studentProfile, setStudentProfile] = useState<any>(null);
+  const [isStudentLoading, setIsStudentLoading] = useState(false);
+
+  useEffect(() => {
+    if (role === 'STUDENT') {
+      setIsStudentLoading(true);
+      studentAPI.getMe()
+        .then(res => { if (res?.student) setStudentProfile(res.student); })
+        .finally(() => setIsStudentLoading(false));
+    }
+  }, [role]);
+
+  // Merge default stats values
+  const stats = rawStats || {
     totalStudents: 0, totalTeachers: 0, attendanceToday: 0, feesCollected: 0,
     studentsChange: 0, teachersChange: 0, attendanceChange: 0, feesChange: 0,
-  });
-  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
-  const [upcomingExams, setUpcomingExams] = useState<UpcomingExam[]>([]);
-  const [feeCollectionSummary, setFeeCollectionSummary] = useState<FeeCollectionSummary>({ totalExpected: 0, collected: 0, pending: 0, collectionRate: 0 });
-  const [accountantData, setAccountantData] = useState<any>(null);
-  const [studentProfile, setStudentProfile] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const loadDashboard = async () => {
-    setIsLoading(true);
-    try {
-      const [statsRes, activitiesRes, examsRes, feeSummaryRes] = await Promise.allSettled([
-        dashboardAPI.getStats(),
-        dashboardAPI.getRecentActivities(8),
-        dashboardAPI.getUpcomingExams(5),
-        dashboardAPI.getFeeCollectionSummary(),
-      ]);
-      if (statsRes.status === 'fulfilled' && statsRes.value.success) setStats(statsRes.value.stats);
-      if (activitiesRes.status === 'fulfilled' && activitiesRes.value.success) setRecentActivities(activitiesRes.value.activities);
-      if (examsRes.status === 'fulfilled' && examsRes.value.success) setUpcomingExams(examsRes.value.exams);
-      if (feeSummaryRes.status === 'fulfilled' && feeSummaryRes.value.success) setFeeCollectionSummary(feeSummaryRes.value.summary);
-
-      if (role === 'ACCOUNTANT') {
-        const acctRes = await dashboardAPI.getAccountantStats().catch(() => null);
-        if (acctRes?.success) setAccountantData(acctRes);
-      }
-
-      if (role === 'STUDENT') {
-        const { studentAPI } = await import('@/lib/api');
-        const studentRes = await studentAPI.getMe().catch(() => null);
-        if (studentRes?.student) setStudentProfile(studentRes.student);
-      }
-    } catch (err) {
-      console.error('Dashboard load error', err);
-    } finally {
-      setIsLoading(false);
-    }
   };
+
+  const isLoading = isDataLoading || isStudentLoading;
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const isAdminOrPrincipal = ['ADMIN', 'SUPER_ADMIN'].includes(role);
@@ -106,40 +90,7 @@ export default function DashboardPage() {
   const isStudent = role === 'STUDENT';
   const isAdmissionManager = role === 'ADMISSION_MANAGER';
 
-  useEffect(() => {
-    loadDashboard();
-  }, [role, socket]);
-
-  useEffect(() => {
-    if (socket && role) {
-      socket.emit('join_dashboard', role);
-      if (isTeacher && stats.myClassId) socket.emit('join_room', `class_${stats.myClassId}`);
-      if (isStudent && stats.studentId) socket.emit('join_room', `student_${stats.studentId}`);
-
-      const handleUpdate = () => loadDashboard();
-      socket.on('ATTENDANCE_MARKED', handleUpdate);
-      socket.on('STUDENT_REGISTERED', handleUpdate);
-      socket.on('FINANCE_UPDATE', handleUpdate);
-      socket.on('INVENTORY_STOCK_MOVEMENT', handleUpdate);
-      socket.on('PAYROLL_GENERATED', handleUpdate);
-      socket.on('PAYROLL_PAID', handleUpdate);
-      socket.on('LIBRARY_BOOK_ISSUED', handleUpdate);
-      socket.on('LIBRARY_BOOK_RETURNED', handleUpdate);
-      socket.on('ANNOUNCEMENT_CREATED', handleUpdate);
-
-      return () => {
-        socket.off('ATTENDANCE_MARKED', handleUpdate);
-        socket.off('STUDENT_REGISTERED', handleUpdate);
-        socket.off('FINANCE_UPDATE', handleUpdate);
-        socket.off('INVENTORY_STOCK_MOVEMENT', handleUpdate);
-        socket.off('PAYROLL_GENERATED', handleUpdate);
-        socket.off('PAYROLL_PAID', handleUpdate);
-        socket.off('LIBRARY_BOOK_ISSUED', handleUpdate);
-        socket.off('LIBRARY_BOOK_RETURNED', handleUpdate);
-        socket.off('ANNOUNCEMENT_CREATED', handleUpdate);
-      };
-    }
-  }, [role, socket, stats.myClassId, stats.studentId, isTeacher, isStudent]);
+  const loadDashboard = refresh; // Compatibility with existing button
 
   if (isLoading) {
     return (
@@ -409,7 +360,7 @@ export default function DashboardPage() {
           </Card>
           <Card className="border-l-4 border-l-destructive">
             <CardHeader className="pb-1 text-xs font-bold uppercase text-destructive">Pending Fee</CardHeader>
-            <CardContent><div className="text-2xl font-black">{stats.pendingFees ?? 0}</div></CardContent>
+            <CardContent><div className="text-2xl font-black">{Math.abs(stats.pendingFees ?? 0)}</div></CardContent>
           </Card>
           <Card className="border-l-4 border-l-primary/40">
             <CardHeader className="pb-1 text-xs font-bold uppercase">Books Due</CardHeader>
@@ -438,7 +389,7 @@ export default function DashboardPage() {
             </div>
             <div className="p-6 pt-4">
               <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-primary/10">
-                {recentActivities.map((activity, idx) => {
+                {recentActivities.map((activity: RecentActivity, idx: number) => {
                   const isFinancial = activity.type?.includes('FEE') || activity.type?.includes('PAYROLL');
                   const isAcademic = activity.type?.includes('EXAM') || activity.type?.includes('STUDENT');
                   
@@ -482,7 +433,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Pending</span>
-                  <span className="font-semibold text-destructive">{formatINR(feeCollectionSummary.pending)}</span>
+                  <span className="font-semibold text-destructive">{formatINR(Math.abs(feeCollectionSummary.pending))}</span>
                 </div>
                 <div className="pt-4">
                   <div className="flex justify-between text-xs mb-2">
@@ -629,7 +580,7 @@ export default function DashboardPage() {
                 <Table>
                   <TableHeader><TableRow><TableHead>Student</TableHead><TableHead>Class</TableHead><TableHead>Contact</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
                   <TableBody>
-                    {stats.recentEnquiries?.map(enq => (
+                    {stats.recentEnquiries?.map((enq: any) => (
                       <TableRow key={enq.id}>
                         <TableCell className="font-bold text-sm">{enq.studentName}</TableCell>
                         <TableCell>{enq.class}</TableCell>
@@ -686,7 +637,7 @@ export default function DashboardPage() {
           <CardHeader className="bg-muted/10"><CardTitle className="text-sm font-bold flex items-center gap-2"><FileText className="h-4 w-4" />Upcoming Examinations</CardTitle></CardHeader>
           <CardContent className="pt-4">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {upcomingExams.map(exam => (
+              {upcomingExams.map((exam: UpcomingExam) => (
                 <div key={exam.id} className="p-3 rounded-lg border border-primary/10 flex justify-between items-center">
                   <div><p className="text-sm font-bold truncate max-w-[150px]">{exam.name}</p><p className="text-[10px] text-muted-foreground">{exam.subject}</p></div>
                   <Badge variant="outline" className="text-[10px]">{new Date(exam.date).toLocaleDateString('en-IN')}</Badge>

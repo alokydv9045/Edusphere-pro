@@ -407,7 +407,7 @@ export default function FeesPage() {
               </div>
               <div className="space-y-1">
                 <p className="text-muted-foreground text-sm">Outstanding Due</p>
-                <p className="text-3xl font-bold text-red-600">{formatCurrency(summary.totalDue)}</p>
+                <p className="text-3xl font-bold text-red-600">{formatCurrency(Math.abs(summary.totalDue))}</p>
               </div>
             </div>
 
@@ -457,7 +457,7 @@ export default function FeesPage() {
                         </td>
                         <td className="py-4 px-4 text-right font-medium">{formatCurrency(ledger.totalPayable)}</td>
                         <td className="py-4 px-4 text-right text-green-600 font-medium">{formatCurrency(ledger.totalPaid)}</td>
-                        <td className="py-4 px-4 text-right text-red-600 font-medium">{formatCurrency(ledger.totalPending)}</td>
+                        <td className="py-4 px-4 text-right text-red-600 font-medium">{formatCurrency(Math.abs(ledger.totalPending))}</td>
                         <td className="py-4 px-4 text-center">
                           {getStatusBadge(ledger.status)}
                         </td>
@@ -659,7 +659,7 @@ export default function FeesPage() {
                           <TableCell className="text-right">₹{student.totalPayable.toLocaleString()}</TableCell>
                           <TableCell className="text-right font-medium text-blue-600">₹{(student.totalPaid || 0).toLocaleString()}</TableCell>
                           <TableCell className="text-right font-semibold text-red-600">
-                            ₹{student.totalPending.toLocaleString()}
+                            ₹{Math.abs(student.totalPending).toLocaleString()}
                           </TableCell>
                           <TableCell className="text-center">
                             <Badge className={`justify-center ${getPaymentStatus(student.feeStatus)}`}>

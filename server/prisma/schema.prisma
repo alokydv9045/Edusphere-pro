@@ -4,8 +4,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -784,6 +785,7 @@ model FeePayment {
   @@index([paymentDate])
   @@index([ledgerId])
   @@index([academicYearId])
+  @@index([status])
 }
 
 model Assignment {
@@ -920,6 +922,8 @@ model InventoryItem {
 
   @@index([itemCode])
   @@index([category])
+  @@index([quantity])
+  @@index([minStockLevel])
 }
 
 model StockMovement {

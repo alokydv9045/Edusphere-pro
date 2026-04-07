@@ -18,6 +18,10 @@ services:
         fromDatabase:
           name: edusphere-db
           property: connectionString
+      - key: DIRECT_URL
+        fromDatabase:
+          name: edusphere-db
+          property: connectionString
       - key: REDIS_URL
         fromService:
           type: redis
@@ -28,19 +32,15 @@ services:
       - key: COOKIE_SECRET
         generateValue: true
       - key: ALLOWED_ORIGINS
-        value: "*" # Set to "*" or your specific client URL after first deploy to break circular dependency
+        value: "*" # Set to "*" or your specific client URL after first deploy
       # School Identity
       - key: SCHOOL_ID
         value: edusphere-prod
       - key: SCHOOL_NAME
         value: EduSphere ERP
-      # Cloudinary
-      - key: CLOUDINARY_CLOUD_NAME
-        sync: false
-      - key: CLOUDINARY_API_KEY
-        sync: false
-      - key: CLOUDINARY_API_SECRET
-        sync: false
+      # Performance Tuning
+      - key: WEB_CONCURRENCY
+        value: 1
 
   # ── EduSphere Frontend Client ──────────────────────────────────────────────
   - type: web

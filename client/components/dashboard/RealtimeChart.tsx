@@ -11,6 +11,7 @@ import { API_BASE_URL } from '@/lib/api/apiConfig';
 import { useSocket } from '@/hooks/useSocket';
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from '@/lib/utils';
+import apiClient from '@/lib/api/client';
 
 interface RealtimeChartProps {
   title: string;
@@ -47,12 +48,7 @@ export const RealtimeChart: React.FC<RealtimeChartProps> = ({
     try {
       // Normalize URL to prevent double /api prefix
       const normalizedEndpoint = endpoint.startsWith('/api/') ? endpoint.replace(/^\/api/, '') : endpoint;
-      const response = await fetch(`${API_BASE_URL}${normalizedEndpoint}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
-      });
-      const result = await response.json();
+      const { data: result } = await apiClient.get(normalizedEndpoint);
       if (result.success) {
         // Handle specific data property if provided, otherwise fallback to standard keys
         let plotData = [];
@@ -76,17 +72,20 @@ export const RealtimeChart: React.FC<RealtimeChartProps> = ({
     fetchData();
 
     if (socket) {
-      socket.on(socketEvent, () => {
-        fetchData(); // Simplest approach for consistency
-      });
-    }
+      let timeout: NodeJS.Timeout;
+      const debouncedFetch = () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(fetchData, 500);
+      };
 
-    return () => {
-      if (socket) {
-        socket.off(socketEvent);
-      }
-    };
-  }, [socket, endpoint, socketEvent, title]);
+      socket.on(socketEvent, debouncedFetch);
+      
+      return () => {
+        socket.off(socketEvent, debouncedFetch);
+        clearTimeout(timeout);
+      };
+    }
+  }, [socket, endpoint, socketEvent]);
 
   const renderChart = () => {
     const textColor = 'var(--muted-foreground)';
